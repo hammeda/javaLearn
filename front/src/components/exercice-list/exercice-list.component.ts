@@ -1,10 +1,11 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Exercice } from './exercice';
 import { HttpClient } from '@angular/common/http';
+import { CodeEditorComponent } from '../common/code-editor/code-editor.component';
 
 @Component({
   selector: 'app-exercice-list',
-  imports: [],
+  imports: [CodeEditorComponent],
   templateUrl: './exercice-list.component.html',
   styleUrl: './exercice-list.component.css',
 })
