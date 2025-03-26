@@ -1,17 +1,19 @@
 package fr.javalearn.game.controllers;
 
+import fr.javalearn.game.entities.Exercice;
+import fr.javalearn.game.entities.TestCase;
+import fr.javalearn.game.repositories.ExerciceRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.tools.*;
 import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,8 +22,11 @@ import java.util.regex.Pattern;
 @RequestMapping("/code")
 public class CodeExecutionController {
 
-    @PostMapping("/execute-code")
-    public ResponseEntity<Map<String, Object>> executeCode(@RequestBody Map<String, String> request) {
+    @Autowired
+    private ExerciceRepository exerciceRepository;
+
+    @PostMapping("/execute-code/{exerciceId}")
+    public ResponseEntity<Map<String, Object>> executeCode(@PathVariable Long exerciceId, @RequestBody Map<String, String> request) {
         String code = request.get("code");
 
         if (code == null || code.isEmpty()) {
@@ -31,6 +36,10 @@ public class CodeExecutionController {
         }
 
         try {
+            // Récupérer l'exercice avec les test cases
+            Exercice exercice = exerciceRepository.findById(exerciceId)
+                    .orElseThrow(() -> new Exception("Exercice not found"));
+
             // Extraction du nom de la classe publique (par exemple "Test" dans "public class Test")
             String className = extractClassName(code);
 
@@ -77,10 +86,14 @@ public class CodeExecutionController {
 
             run.waitFor();
 
-            // Répondre avec succès et inclure la sortie du programme Java
+            // Comparer le résultat avec les test cases associés à l'exercice
+            Map<String, String> testResults = validateCodeWithTestCases(output.toString(), exercice.getTestCases());
+
+            // Répondre avec succès et inclure la sortie du programme Java et les résultats des tests
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Code exécuté avec succès");
             response.put("result", output.toString());  // Retourne le résultat capturé dans la sortie du programme Java
+            response.put("testResults", testResults);   // Retourne les résultats des tests
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -91,7 +104,22 @@ public class CodeExecutionController {
         }
     }
 
+    // Méthode pour comparer la sortie du code avec les test cases de l'exercice
+    private Map<String, String> validateCodeWithTestCases(String output, List<TestCase> testCases) {
+        Map<String, String> testResults = new HashMap<>();
 
+        for (TestCase testCase : testCases) {
+            String expectedOutput = testCase.getOutput();
+            if (output.trim().equals(expectedOutput.trim())) {
+                testResults.put(testCase.getExercice().getTitre(), "Test passed");
+            } else {
+                testResults.put(testCase.getExercice().getTitre(),
+                        "Test failed: expected \"" + expectedOutput + "\", but got \"" + output.trim() + "\"");
+            }
+        }
+
+        return testResults;
+    }
 
     // Méthode pour extraire le nom de la classe publique du code source
     private String extractClassName(String code) {
@@ -108,5 +136,4 @@ public class CodeExecutionController {
 
         return className;
     }
-
 }

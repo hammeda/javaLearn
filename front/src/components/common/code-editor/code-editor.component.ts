@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
-import { AfterViewInit, Component, inject } from '@angular/core';
+import { AfterViewInit, Component, inject, Input } from '@angular/core';
 import * as monaco from 'monaco-editor';
+import { Exercice } from '../../exercice-list/exercice';
 
 @Component({
   selector: 'app-code-editor',
@@ -9,6 +10,7 @@ import * as monaco from 'monaco-editor';
   styleUrl: './code-editor.component.css',
 })
 export class CodeEditorComponent implements AfterViewInit {
+  @Input({ required: true }) exercice!: Exercice;
   http = inject(HttpClient);
   editor: monaco.editor.IStandaloneCodeEditor | undefined;
 
@@ -19,8 +21,7 @@ export class CodeEditorComponent implements AfterViewInit {
       this.editor = monaco.editor.create(editorElement, {
         value: `public class Test {
     public static String run() {
-        return "Hello from Java!";
-    }
+        return "5";}
 
     public static void main(String[] args) {
         System.out.println(run());
@@ -52,13 +53,15 @@ export class CodeEditorComponent implements AfterViewInit {
   onRunCode() {
     const code = this.getCode();
     if (code) {
-      console.log('Code exécuté:', code); // Afficher le code dans la console
+      console.log('Code exécuté:', code);
       this.http
-        .post('http://localhost:9090/code/execute-code', { code })
+        .post(`http://localhost:9090/code/execute-code/${this.exercice.id}`, {
+          code,
+        })
         .subscribe(
           (response: any) => {
-            console.log('Réponse du back-end : ', response);
-            alert(`Résultat du code : ${response.result}`); // Afficher le résultat du code
+            console.log('Réponse du backend : ', response);
+            alert(`Résultat des tests : ${JSON.stringify(response)}`);
           },
           (error) => {
             console.log('Erreur exécution du code : ', error);
