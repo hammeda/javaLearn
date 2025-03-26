@@ -1,0 +1,9 @@
+<h2>Liste des Exercices</h2>
+<ul>
+  @for (exercice of exercices; track $index) {
+
+  <li>
+    <strong>{{ exercice.titre }}</strong> - {{ exercice.difficulty }}
+  </li>
+  }
+</ul>
