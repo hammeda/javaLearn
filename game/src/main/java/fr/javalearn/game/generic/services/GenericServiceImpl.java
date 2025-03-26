@@ -21,7 +21,6 @@ import java.util.Optional;
  * @param <D> the type parameter
  * @param <M> the type parameter
  */
-@Transactional
 @RequiredArgsConstructor
 public abstract class GenericServiceImpl<
         E extends BaseEntity,

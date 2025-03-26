@@ -1,5 +1,6 @@
 package fr.javalearn.game.generic.services;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -10,6 +11,7 @@ import java.util.Optional;
  *
  * @param <D> the type parameter
  */
+@Transactional
 public interface GenericService<D> {
     /**
      * Find all page.
@@ -42,4 +44,5 @@ public interface GenericService<D> {
      */
     void deleteById(long id);
 }
+
 

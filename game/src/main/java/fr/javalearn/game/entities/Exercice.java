@@ -25,10 +25,7 @@ public class Exercice extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Difficulty difficulty;
-    @Column(nullable = false)
-    private String resultatAttendu;
 
-    @ElementCollection
-    @CollectionTable(name = "exercise_test_cases", joinColumns = @JoinColumn(name = "exercise_id"))
+    @OneToMany(mappedBy="exercice")
     private List<TestCase> testCases;
 }

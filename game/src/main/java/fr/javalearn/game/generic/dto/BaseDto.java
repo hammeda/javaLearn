@@ -1,6 +1,5 @@
 package fr.javalearn.game.generic.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,3 +20,4 @@ public abstract class BaseDto {
      */
     protected int version;
 }
+
