@@ -8,10 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.tools.*;
 import java.io.*;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,33 +24,28 @@ public class CodeExecutionController {
 
     @PostMapping("/execute-code/{exerciceId}")
     public ResponseEntity<Map<String, Object>> executeCode(@PathVariable Long exerciceId, @RequestBody Map<String, String> request) {
+
         String code = request.get("code");
 
         if (code == null || code.isEmpty()) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Code is empty");
+            errorResponse.put("message", "Le code est vide");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
 
         try {
-            // Récupérer l'exercice avec les test cases
             Exercice exercice = exerciceRepository.findById(exerciceId)
                     .orElseThrow(() -> new Exception("Exercice not found"));
 
-            // Extraction du nom de la classe publique (par exemple "Test" dans "public class Test")
             String className = extractClassName(code);
-
-            // Créer un fichier temporaire contenant le code à exécuter avec le bon nom de fichier
             File tempFile = new File(System.getProperty("java.io.tmpdir"), className + ".java");
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
                 writer.write(code);
             }
 
-            // Compiler le code avec javac (en appelant javac via ProcessBuilder)
             ProcessBuilder compilerProcess = new ProcessBuilder("javac", tempFile.getPath());
             Process compile = compilerProcess.start();
 
-            // Capturer la sortie d'erreur du processus de compilation
             StringBuilder errorOutput = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(compile.getErrorStream()))) {
                 String line;
@@ -63,37 +55,47 @@ public class CodeExecutionController {
             }
 
             int compileResult = compile.waitFor();
-
             if (compileResult != 0) {
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("message", "Compilation failed");
-                errorResponse.put("details", errorOutput.toString());  // Ajouter les erreurs de compilation dans la réponse
+                errorResponse.put("details", errorOutput.toString());
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
             }
 
-            // Exécuter le code compilé (en appelant java via ProcessBuilder)
             ProcessBuilder runProcess = new ProcessBuilder("java", "-cp", tempFile.getParent(), className);
-
-            // Capturer la sortie du programme Java
-            StringBuilder output = new StringBuilder();
             Process run = runProcess.start();
+
+            StringBuilder output = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(run.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n"); // Capturer tout ce qui est affiché dans la sortie standard
+                    output.append(line).append("\n");
+                }
+            }
+
+            StringBuilder errorExecutionOutput = new StringBuilder();
+            try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(run.getErrorStream()))) {
+                String line;
+                while ((line = errorReader.readLine()) != null) {
+                    errorExecutionOutput.append(line).append("\n");
                 }
             }
 
             run.waitFor();
 
-            // Comparer le résultat avec les test cases associés à l'exercice
+            if (!errorExecutionOutput.toString().isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("message", "Execution failed");
+                errorResponse.put("errorDetails", errorExecutionOutput.toString());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            }
+
             Map<String, String> testResults = validateCodeWithTestCases(output.toString(), exercice.getTestCases());
 
-            // Répondre avec succès et inclure la sortie du programme Java et les résultats des tests
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Code exécuté avec succès");
-            response.put("result", output.toString());  // Retourne le résultat capturé dans la sortie du programme Java
-            response.put("testResults", testResults);   // Retourne les résultats des tests
+            response.put("result", output.toString());
+            response.put("testResults", testResults);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -104,10 +106,8 @@ public class CodeExecutionController {
         }
     }
 
-    // Méthode pour comparer la sortie du code avec les test cases de l'exercice
     private Map<String, String> validateCodeWithTestCases(String output, List<TestCase> testCases) {
         Map<String, String> testResults = new HashMap<>();
-
         for (TestCase testCase : testCases) {
             String expectedOutput = testCase.getOutput();
             if (output.trim().equals(expectedOutput.trim())) {
@@ -117,23 +117,17 @@ public class CodeExecutionController {
                         "Test failed: expected \"" + expectedOutput + "\", but got \"" + output.trim() + "\"");
             }
         }
-
         return testResults;
     }
 
-    // Méthode pour extraire le nom de la classe publique du code source
     private String extractClassName(String code) {
-        // Rechercher la déclaration de la classe publique
-        String className = "UnnamedClass";  // Valeur par défaut au cas où
-
+        String className = "UnnamedClass";
         String regex = "public\\s+class\\s+(\\w+)";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(code);
-
         if (matcher.find()) {
-            className = matcher.group(1); // Extraire le nom de la classe
+            className = matcher.group(1);
         }
-
         return className;
     }
 }

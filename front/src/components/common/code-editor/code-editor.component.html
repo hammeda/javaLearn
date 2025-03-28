@@ -1,2 +1,43 @@
-<div id="editor" style="height: 400px; width: 100%"></div>
-<button (click)="onRunCode()">Exécuter le code</button>
+<div
+  class="bg-[#1e1e1e] p-6 border border-gray-400/50 rounded-lg shadow-[0px_10px_20px_10px_#00000024]"
+>
+  <div id="editor" style="height: 400px; width: 100%"></div>
+  <button
+    class="relative bottom-0 left-0 rounded-full p-2 rounded bg-yellow-50/10 hover:bg-yellow-50/25 duration-200 text-white w-fit"
+    (click)="correction()"
+  >
+    💡
+  </button>
+  <button
+    class="relative bottom-0 left-5/6 rounded px-4 py-2 rounded bg-emerald-300 text-white w-fit"
+    (click)="onRunCode()"
+  >
+    Exécuter le code
+  </button>
+</div>
+@if (testFailed || !testFailed && resultMessage) {
+
+<div
+  class="mt-10 bg-[#1e1e1e] p-6 border border-gray-400/50 rounded-lg shadow-[0px_10px_20px_10px_#00000024]"
+>
+  @if(testFailed){
+  <div>
+    <p style="color: red">ERREUR :</p>
+    <ul>
+      @for(message of testMessages; track $index) {
+      {{
+        message
+      }}
+      }
+    </ul>
+  </div>
+  } @if(!testFailed && resultMessage){
+  <div>
+    <p style="color: green">Code exécuté avec succès !</p>
+    <p>
+      Résultat : <strong>{{ resultMessage }}</strong>
+    </p>
+  </div>
+  }
+</div>
+}

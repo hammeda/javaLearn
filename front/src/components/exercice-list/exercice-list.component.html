@@ -1,10 +1,24 @@
-<h2>Liste des Exercices</h2>
-<ul>
-  @for (exercice of exercices; track $index) {
+<div
+  class="text-white flex flex-col items-center justify-center h-full w-full m-auto"
+>
+  <h2>Liste des Exercices</h2>
+  <div class="inline-flex gap-8 mt-10">
+    @for (exercice of exercices; track $index) {
 
-  <li>
-    <strong>{{ exercice.titre }}</strong> - {{ exercice.difficulty }}
-  </li>
-  <app-code-editor [exercice]="exercice"></app-code-editor>
-  }
-</ul>
+    <div
+      class="flex flex-col gap-2 justify-center items-center p-4 rounded-lg w-[175px] h-[175px] bg-neutral-700"
+    >
+      <h3 class="text-4xl text-center">{{ exercice.difficulty }}</h3>
+      <h2>{{ exercice.titre }}</h2>
+      <button
+        class="font-semibold rounded border py-1 px-4 duration-150 text-lime-600 border-lime-600"
+        [routerLink]="'play/id'"
+        [state]="exercice"
+      >
+        Play
+      </button>
+    </div>
+
+    }
+  </div>
+</div>

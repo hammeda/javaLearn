@@ -22,9 +22,23 @@ public class Exercice extends BaseEntity {
     @Column(nullable = false)
     private String description;
 
-    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, unique = true)
+    private int difficulty;
+
     @Column(nullable = false)
-    private Difficulty difficulty;
+    private String nomCours;
+
+    @Column(nullable = false)
+    private String descriptionCours;
+
+    @Column(nullable = false)
+    private String exempleCours;
+
+    @Column(nullable = false)
+    private String retourExempleCours;
+
+    @Column(nullable = false)
+    private String correction;
 
     @OneToMany(mappedBy="exercice")
     private List<TestCase> testCases;
